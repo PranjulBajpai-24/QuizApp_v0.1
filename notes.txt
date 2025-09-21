@@ -1,0 +1,10 @@
+cd "C:\Users\pranjul bajpai\OneDrive\Desktop\QUIZ Application\Frontend\src"
+
+javac quiz\app\*.java
+
+java quiz.app.Login  
+
+
+Backend
+
+C:\Users\pranjul bajpai\OneDrive\Desktop\QUIZ Application\Backend\quiz-backend\src\main\java\com\example\quiz_backend\QuizBackendApplication.java
