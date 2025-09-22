@@ -1,247 +1,191 @@
 package quiz.app;
 
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
 public class Quiz extends JFrame implements ActionListener {
 
-    String[][] questions;
-    String[][] answers;
-    String[][] userAns;
+    // UI Components
+    JLabel questionCounterLabel, questionTextLabel;
+    JRadioButton option1, option2, option3, option4; // Assuming 4 options for flexibility
+    ButtonGroup groupOptions;
+    JButton nextButton, submitButton;
 
-    JLabel qno, ques, timerLabel;
-    JRadioButton o1, o2, o3, o4;
-    ButtonGroup grp;
-    JButton next, submit, help;
+    // Data and Logic Variables
+    private List<Question> questions;
+    private int questionIndex = 0;
+    private int score = 0;
+    private String userName;
+    public static final int TOTAL_QUESTIONS = 15; // Set the total number of questions for the quiz
 
-    private int cnt = 0;
-    public static int score = 80; // Initialize to 0
+    public Quiz(String userName) {
+        this.userName = userName;
 
-    String name;
-    private javax.swing.Timer questionTimer;
-    private int secondsLeft = 30; // changed to 30
+        // --- 1. FETCH QUESTIONS FROM BACKEND ---
+        // This is the key change: we call the service to get live data.
+        QuizService quizService = new QuizService();
+        this.questions = quizService.getQuizQuestions();
 
-    int totalQuestions;
-    JProgressBar progressBar;
-
-    Quiz(String name) {
-        this.name = name;
-
-        QuestionData qData = new QuestionData();
-        questions = qData.getQuestions();
-        answers = qData.getAnswers();
-        totalQuestions = qData.getTotalQuestions();
-        userAns = new String[totalQuestions][1];
-
-        setUndecorated(true);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        // Basic JFrame setup
+        setTitle("Quiz Master");
+        setBounds(50, 0, 1440, 850);
+        getContentPane().setBackground(Color.WHITE);
         setLayout(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int screenWidth = screenSize.width;
-        int screenHeight = screenSize.height;
-
-        ImageIcon i1 = new ImageIcon(ClassLoader.getSystemResource("icons/quiz.png"));
-        Image img = i1.getImage().getScaledInstance(screenWidth, 300, Image.SCALE_SMOOTH);
-        ImageIcon i2 = new ImageIcon(img);
-
-        JLabel image = new JLabel(i2);
-        image.setBounds(0, 0, screenWidth, 300);
+        // Add an image icon (optional)
+        ImageIcon i1 = new ImageIcon(getClass().getResource("/icons/quiz.png"));
+        JLabel image = new JLabel(i1);
+        image.setBounds(0, 0, 1440, 392);
         add(image);
 
-        getContentPane().setBackground(new Color(255, 245, 230));
+        // UI Component Initialization
+        questionCounterLabel = new JLabel();
+        questionCounterLabel.setBounds(100, 450, 50, 30);
+        questionCounterLabel.setFont(new Font("Tahoma", Font.PLAIN, 24));
+        add(questionCounterLabel);
 
-        qno = new JLabel();
-        qno.setBounds(100, 350, 50, 30);
-        qno.setFont(new Font("Tahoma", Font.BOLD, 24));
-        add(qno);
+        questionTextLabel = new JLabel();
+        questionTextLabel.setBounds(150, 450, 900, 30);
+        questionTextLabel.setFont(new Font("Tahoma", Font.PLAIN, 24));
+        add(questionTextLabel);
 
-        ques = new JLabel();
-        ques.setBounds(150, 350, screenWidth - 200, 30);
-        ques.setFont(new Font("Tahoma", Font.PLAIN, 24));
-        add(ques);
+        option1 = new JRadioButton();
+        option1.setBounds(170, 520, 700, 30);
+        option1.setBackground(Color.WHITE);
+        option1.setFont(new Font("Dialog", Font.PLAIN, 20));
+        add(option1);
 
-        timerLabel = new JLabel("Time left: 30 seconds");
-        timerLabel.setBounds(screenWidth - 300, 310, 250, 30);
-        timerLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
-        timerLabel.setForeground(Color.RED);
-        add(timerLabel);
+        option2 = new JRadioButton();
+        option2.setBounds(170, 560, 700, 30);
+        option2.setBackground(Color.WHITE);
+        option2.setFont(new Font("Dialog", Font.PLAIN, 20));
+        add(option2);
 
-        int optionStartY = 420;
-        int optionGap = 50;
+        option3 = new JRadioButton();
+        option3.setBounds(170, 600, 700, 30);
+        option3.setBackground(Color.WHITE);
+        option3.setFont(new Font("Dialog", Font.PLAIN, 20));
+        add(option3);
 
-        o1 = new JRadioButton();
-        o2 = new JRadioButton();
-        o3 = new JRadioButton();
-        o4 = new JRadioButton();
+        option4 = new JRadioButton();
+        option4.setBounds(170, 640, 700, 30);
+        option4.setBackground(Color.WHITE);
+        option4.setFont(new Font("Dialog", Font.PLAIN, 20));
+        add(option4);
 
-        JRadioButton[] options = { o1, o2, o3, o4 };
-        for (int i = 0; i < 4; i++) {
-            options[i].setBounds(150, optionStartY + i * optionGap, screenWidth - 300, 30);
-            options[i].setBackground(new Color(255, 245, 230));
-            options[i].setFont(new Font("Dialog", Font.PLAIN, 20));
-            add(options[i]);
-        }
+        groupOptions = new ButtonGroup();
+        groupOptions.add(option1);
+        groupOptions.add(option2);
+        groupOptions.add(option3);
+        groupOptions.add(option4);
 
-        grp = new ButtonGroup();
-        grp.add(o1);
-        grp.add(o2);
-        grp.add(o3);
-        grp.add(o4);
+        nextButton = new JButton("Next");
+        nextButton.setBounds(1100, 550, 200, 40);
+        nextButton.setFont(new Font("Tahoma", Font.PLAIN, 22));
+        nextButton.setBackground(new Color(30, 144, 255));
+        nextButton.setForeground(Color.WHITE);
+        nextButton.addActionListener(this);
+        add(nextButton);
 
-        int buttonWidth = 200;
-        int buttonHeight = 40;
-        int bottomPadding = 100;
+        submitButton = new JButton("Submit");
+        submitButton.setBounds(1100, 630, 200, 40);
+        submitButton.setFont(new Font("Tahoma", Font.PLAIN, 22));
+        submitButton.setBackground(new Color(30, 144, 255));
+        submitButton.setForeground(Color.WHITE);
+        submitButton.setEnabled(false); // Enabled only on the last question
+        submitButton.addActionListener(this);
+        add(submitButton);
 
-        help = new JButton("Help");
-        help.setBounds(100, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
-        help.setBackground(new Color(30, 144, 255));
-        help.setForeground(Color.WHITE);
-        help.setFont(new Font("Tahoma", Font.BOLD, 16));
-        help.addActionListener(this);
-        add(help);
+        // Start the quiz by displaying the first question
+        displayQuestion();
 
-        next = new JButton("Next");
-        next.setBounds(screenWidth - buttonWidth - 100, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
-        next.setBackground(new Color(30, 144, 255));
-        next.setForeground(Color.WHITE);
-        next.setFont(new Font("Tahoma", Font.BOLD, 16));
-        next.addActionListener(this);
-        add(next);
-
-        submit = new JButton("Submit");
-        submit.setBounds((screenWidth - buttonWidth) / 2, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
-        submit.setBackground(new Color(34, 139, 34));
-        submit.setForeground(Color.WHITE);
-        submit.setFont(new Font("Tahoma", Font.BOLD, 16));
-        submit.setEnabled(false);
-        submit.addActionListener(this);
-        add(submit);
-
-        progressBar = new JProgressBar(0, totalQuestions);
-        progressBar.setValue(0);
-        progressBar.setStringPainted(true);
-        progressBar.setFont(new Font("Tahoma", Font.BOLD, 16));
-        progressBar.setForeground(new Color(60, 179, 113));
-        progressBar.setBounds(150, screenHeight - 70, screenWidth - 300, 25);
-        add(progressBar);
-
-        questionTimer = new javax.swing.Timer(1000, e -> updateTimer());
-        start(cnt);
         setVisible(true);
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == next) {
-            recordAnswer();
-            cnt++;
-            if (cnt == totalQuestions - 1) {
-                next.setEnabled(false);
-                submit.setEnabled(true);
-            }
-            if (cnt < totalQuestions) {
-                start(cnt);
-            }
-        } else if (e.getSource() == help) {
-            questionTimer.stop();
-            new Help(this);
-            help.setEnabled(false);
-        } else if (e.getSource() == submit) {
-            questionTimer.stop();
-            recordAnswer();
-            calculateScore();
-            setVisible(false);
-            new Score(name, score);
-        }
-    }
+        // Check the answer and update the score
+        checkAnswer();
 
-    private void updateTimer() {
-        secondsLeft--;
-        timerLabel.setText("Time left: " + secondsLeft + " seconds");
+        // Move to the next question
+        questionIndex++;
 
-        if (secondsLeft <= 0) {
-            timerLabel.setText("Time's up!");
-            questionTimer.stop();
-            handleTimeUp();
-        }
-    }
-
-    private void handleTimeUp() {
-        recordAnswer();
-        cnt++;
-        if (cnt == totalQuestions - 1) {
-            next.setEnabled(false);
-            submit.setEnabled(true);
-            start(cnt);
-        } else if (cnt < totalQuestions) {
-            start(cnt);
+        if (questionIndex == TOTAL_QUESTIONS) {
+            // If it's the end of the quiz, show the score
+            showScore();
         } else {
-            calculateScore();
-            setVisible(false);
-            new Score(name, score);
+            // Otherwise, display the next question
+            displayQuestion();
+            // Enable the submit button only on the last question
+            if (questionIndex == TOTAL_QUESTIONS - 1) {
+                nextButton.setEnabled(false);
+                submitButton.setEnabled(true);
+            }
         }
     }
 
-    private void recordAnswer() {
-        if (grp.getSelection() == null) {
-            userAns[cnt][0] = "";
+    private void displayQuestion() {
+        if (questionIndex < questions.size() && questionIndex < TOTAL_QUESTIONS) {
+            Question currentQuestion = questions.get(questionIndex);
+
+            questionCounterLabel.setText((questionIndex + 1) + ".");
+            questionTextLabel.setText(currentQuestion.getQuestionText());
+            option1.setText(currentQuestion.getOptionA());
+            option2.setText(currentQuestion.getOptionB());
+            option3.setText(currentQuestion.getOptionC());
+            // Assuming the 4th option is stored in a field, e.g., getOptionD()
+            // If you only have 3 options, you can hide the 4th radio button:
+            // option4.setVisible(false);
+            // For now, let's assume 3 options and use a placeholder for the 4th.
+             option4.setText("None of the above");
+
+
+            // Clear the selection from the previous question
+            groupOptions.clearSelection();
         } else {
-            userAns[cnt][0] = grp.getSelection().getActionCommand();
-        }
-    }
-
-    private void calculateScore() {
-        score = 0;
-        for (int i = 0; i < totalQuestions; i++) {
-            System.out.println("Question " + (i + 1) + ":");
-            System.out.println("  User answer: " + (userAns[i][0] != null ? userAns[i][0] : "null"));
-            System.out.println("  Correct answer: " + (answers[i][0] != null ? answers[i][0] : "null"));
-
-            if (userAns[i][0] != null &&
-                answers[i][0] != null &&
-                userAns[i][0].equals(answers[i][0])) {
-                System.out.println("  CORRECT!");
-                score += 10;
+            // Handle case where there are not enough questions from the backend
+            if (questionIndex > 0) { // If at least one question was shown
+                showScore();
             } else {
-                System.out.println("  INCORRECT!");
+                JOptionPane.showMessageDialog(this, "Could not load questions from the server.", "Error", JOptionPane.ERROR_MESSAGE);
+                setVisible(false);
+                // Go back to login or exit
             }
         }
-        System.out.println("Total Score: " + score);
     }
 
-    public void start(int cnt) {
-        if (cnt < totalQuestions) {
-            qno.setText((cnt + 1) + ". ");
-            ques.setText(questions[cnt][0]);
-            o1.setText(questions[cnt][1]);
-            o1.setActionCommand(questions[cnt][1]);
-            o2.setText(questions[cnt][2]);
-            o2.setActionCommand(questions[cnt][2]);
-            o3.setText(questions[cnt][3]);
-            o3.setActionCommand(questions[cnt][3]);
-            o4.setText(questions[cnt][4]);
-            o4.setActionCommand(questions[cnt][4]);
-            grp.clearSelection();
+    private void checkAnswer() {
+        Question currentQuestion = questions.get(questionIndex);
+        String correctAnswer = currentQuestion.getCorrectAnswer();
+        String selectedAnswer = null;
 
-            secondsLeft = 30; // changed to 30
-            timerLabel.setText("Time left: " + secondsLeft + " seconds");
-            timerLabel.setForeground(Color.RED);
-            questionTimer.start();
+        if (option1.isSelected()) {
+            selectedAnswer = option1.getText();
+        } else if (option2.isSelected()) {
+            selectedAnswer = option2.getText();
+        } else if (option3.isSelected()) {
+            selectedAnswer = option3.getText();
+        } else if (option4.isSelected()) {
+            selectedAnswer = option4.getText();
+        }
 
-            help.setEnabled(true);
-            progressBar.setValue(cnt + 1);
-            progressBar.setString("Question " + (cnt + 1) + " of " + totalQuestions);
+        if (selectedAnswer != null && selectedAnswer.equals(correctAnswer)) {
+            score += 10;
         }
     }
 
-    public void resumeTimer() {
-        if (secondsLeft > 0) {
-            questionTimer.start();
-        }
+    private void showScore() {
+        setVisible(false);
+        // Assuming you have a Score class that takes name and score
+        new Score(userName, score);
     }
 
     public static void main(String[] args) {
+        // For testing purposes
         new Quiz("User");
     }
 }
