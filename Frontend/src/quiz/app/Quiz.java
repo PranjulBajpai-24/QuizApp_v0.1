@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
 import java.util.List;
+import javax.swing.Timer;
 
 public class Quiz extends JFrame implements ActionListener {
 
@@ -18,11 +19,19 @@ public class Quiz extends JFrame implements ActionListener {
     // Data and Logic Variables
     private List<Question> questions;
     private int questionIndex = 0;
-    private int score = 0;
-    private String userName;
+    public static int score = 0;  // Changed to public static for access from Help class
+    public String name;  // Changed to public for access from Help class
+    private String rollNo;
 
-    public Quiz(String userName) {
-        this.userName = userName;
+    // Timer related variables
+    private Timer timer;
+    private int secondsLeft = 15;
+    private JLabel timerLabel;
+    private boolean timerRunning = false;
+
+    public Quiz(String userName, String rollNo) {
+        this.name = userName;
+        this.rollNo = rollNo;
         QuizService quizService = new QuizService();
         this.questions = quizService.getQuizQuestions();
 
@@ -39,6 +48,25 @@ public class Quiz extends JFrame implements ActionListener {
             image.setBounds(0, 0, 1440, 392);
             add(image);
         }
+
+        // Timer label
+        timerLabel = new JLabel("15");
+        timerLabel.setBounds(1100, 450, 100, 30);
+        timerLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
+        timerLabel.setForeground(Color.RED);
+        add(timerLabel);
+
+        // Initialize timer
+        timer = new Timer(1000, e -> {
+            secondsLeft--;
+            timerLabel.setText(Integer.toString(secondsLeft));
+            if (secondsLeft <= 0) {
+                ((Timer)e.getSource()).stop();
+                timerRunning = false;
+                checkAnswer();
+                nextQuestion();
+            }
+        });
 
         questionCounterLabel = new JLabel();
         questionCounterLabel.setBounds(100, 450, 50, 30);
@@ -102,6 +130,7 @@ public class Quiz extends JFrame implements ActionListener {
             System.exit(0);
         } else {
             displayQuestion();
+            startTimer();
             setVisible(true);
         }
     }
@@ -112,12 +141,24 @@ public class Quiz extends JFrame implements ActionListener {
         if (e.getSource() == submitButton) {
             showScore();
         } else if (e.getSource() == nextButton) {
-            questionIndex++;
+            nextQuestion();
+        }
+    }
+
+    private void nextQuestion() {
+        questionIndex++;
+        if (timer.isRunning()) {
+            timer.stop();
+        }
+        if (questionIndex < questions.size()) {
             displayQuestion();
+            startTimer();
             if (questionIndex == questions.size() - 1) {
                 nextButton.setEnabled(false);
                 submitButton.setEnabled(true);
             }
+        } else {
+            showScore();
         }
     }
 
@@ -130,6 +171,8 @@ public class Quiz extends JFrame implements ActionListener {
         option2.setText(currentQuestion.getOptionB());
         option3.setText(currentQuestion.getOptionC());
         option4.setText(currentQuestion.getOptionD());
+        secondsLeft = 15;
+        timerLabel.setText(Integer.toString(secondsLeft));
     }
 
     private void checkAnswer() {
@@ -153,17 +196,32 @@ public class Quiz extends JFrame implements ActionListener {
     }
 
     private void showScore() {
+        if (timer.isRunning()) {
+            timer.stop();
+        }
         setVisible(false);
-        new Score(userName, score);
+        new Score(name, score);
     }
 
-    // --- ADDED PUBLIC GETTER METHODS ---
-    // These methods allow other classes like Help.java to safely access user name and score.
-    public String getUserName() {
-        return this.userName;
+    public void startTimer() {
+        secondsLeft = 15;
+        timerLabel.setText(Integer.toString(secondsLeft));
+        timer.start();
+        timerRunning = true;
     }
 
-    public int getScore() {
-        return this.score;
+    public void stopTimer() {
+        if (timer.isRunning()) {
+            timer.stop();
+            timerRunning = false;
+        }
+    }
+
+    // Add this method to fix Help.java errors
+    public void resumeTimer() {
+        if (!timerRunning) {
+            timer.start();
+            timerRunning = true;
+        }
     }
 }
