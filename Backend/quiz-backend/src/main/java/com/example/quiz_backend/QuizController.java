@@ -1,4 +1,4 @@
-package com.example.quizbackend;
+package com.example.quiz_backend;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

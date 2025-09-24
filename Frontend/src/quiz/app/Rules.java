@@ -18,7 +18,7 @@ public class Rules extends JFrame implements ActionListener {
     String name;
     String rollNo;
 
-    Rules(String name, String rollNo) {
+    public Rules(String name, String rollNo) {
         this.name = name;
         this.rollNo = rollNo;
         getContentPane().setBackground(new Color(255, 218, 185)); // Peach background

@@ -4,13 +4,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import java.util.List;
 
 public class Quiz extends JFrame implements ActionListener {
 
     // UI Components
     JLabel questionCounterLabel, questionTextLabel;
-    JRadioButton option1, option2, option3, option4; // Assuming 4 options for flexibility
+    JRadioButton option1, option2, option3, option4;
     ButtonGroup groupOptions;
     JButton nextButton, submitButton;
 
@@ -19,37 +20,33 @@ public class Quiz extends JFrame implements ActionListener {
     private int questionIndex = 0;
     private int score = 0;
     private String userName;
-    public static final int TOTAL_QUESTIONS = 15; // Set the total number of questions for the quiz
 
     public Quiz(String userName) {
         this.userName = userName;
-
-        // --- 1. FETCH QUESTIONS FROM BACKEND ---
-        // This is the key change: we call the service to get live data.
         QuizService quizService = new QuizService();
         this.questions = quizService.getQuizQuestions();
 
-        // Basic JFrame setup
         setTitle("Quiz Master");
         setBounds(50, 0, 1440, 850);
         getContentPane().setBackground(Color.WHITE);
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Add an image icon (optional)
-        ImageIcon i1 = new ImageIcon(getClass().getResource("/icons/quiz.png"));
-        JLabel image = new JLabel(i1);
-        image.setBounds(0, 0, 1440, 392);
-        add(image);
+        URL iconUrl = getClass().getResource("/icons/quiz.png");
+        if (iconUrl != null) {
+            ImageIcon i1 = new ImageIcon(iconUrl);
+            JLabel image = new JLabel(i1);
+            image.setBounds(0, 0, 1440, 392);
+            add(image);
+        }
 
-        // UI Component Initialization
         questionCounterLabel = new JLabel();
         questionCounterLabel.setBounds(100, 450, 50, 30);
         questionCounterLabel.setFont(new Font("Tahoma", Font.PLAIN, 24));
         add(questionCounterLabel);
 
         questionTextLabel = new JLabel();
-        questionTextLabel.setBounds(150, 450, 900, 30);
+        questionTextLabel.setBounds(150, 450, 1200, 30);
         questionTextLabel.setFont(new Font("Tahoma", Font.PLAIN, 24));
         add(questionTextLabel);
 
@@ -94,34 +91,30 @@ public class Quiz extends JFrame implements ActionListener {
         submitButton = new JButton("Submit");
         submitButton.setBounds(1100, 630, 200, 40);
         submitButton.setFont(new Font("Tahoma", Font.PLAIN, 22));
-        submitButton.setBackground(new Color(30, 144, 255));
+        submitButton.setBackground(new Color(255, 140, 0));
         submitButton.setForeground(Color.WHITE);
-        submitButton.setEnabled(false); // Enabled only on the last question
+        submitButton.setEnabled(false);
         submitButton.addActionListener(this);
         add(submitButton);
 
-        // Start the quiz by displaying the first question
-        displayQuestion();
-
-        setVisible(true);
+        if (questions == null || questions.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Could not load questions. Make sure the backend server is running.", "Load Error", JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+        } else {
+            displayQuestion();
+            setVisible(true);
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // Check the answer and update the score
         checkAnswer();
-
-        // Move to the next question
-        questionIndex++;
-
-        if (questionIndex == TOTAL_QUESTIONS) {
-            // If it's the end of the quiz, show the score
+        if (e.getSource() == submitButton) {
             showScore();
-        } else {
-            // Otherwise, display the next question
+        } else if (e.getSource() == nextButton) {
+            questionIndex++;
             displayQuestion();
-            // Enable the submit button only on the last question
-            if (questionIndex == TOTAL_QUESTIONS - 1) {
+            if (questionIndex == questions.size() - 1) {
                 nextButton.setEnabled(false);
                 submitButton.setEnabled(true);
             }
@@ -129,33 +122,14 @@ public class Quiz extends JFrame implements ActionListener {
     }
 
     private void displayQuestion() {
-        if (questionIndex < questions.size() && questionIndex < TOTAL_QUESTIONS) {
-            Question currentQuestion = questions.get(questionIndex);
-
-            questionCounterLabel.setText((questionIndex + 1) + ".");
-            questionTextLabel.setText(currentQuestion.getQuestionText());
-            option1.setText(currentQuestion.getOptionA());
-            option2.setText(currentQuestion.getOptionB());
-            option3.setText(currentQuestion.getOptionC());
-            // Assuming the 4th option is stored in a field, e.g., getOptionD()
-            // If you only have 3 options, you can hide the 4th radio button:
-            // option4.setVisible(false);
-            // For now, let's assume 3 options and use a placeholder for the 4th.
-             option4.setText("None of the above");
-
-
-            // Clear the selection from the previous question
-            groupOptions.clearSelection();
-        } else {
-            // Handle case where there are not enough questions from the backend
-            if (questionIndex > 0) { // If at least one question was shown
-                showScore();
-            } else {
-                JOptionPane.showMessageDialog(this, "Could not load questions from the server.", "Error", JOptionPane.ERROR_MESSAGE);
-                setVisible(false);
-                // Go back to login or exit
-            }
-        }
+        groupOptions.clearSelection();
+        Question currentQuestion = questions.get(questionIndex);
+        questionCounterLabel.setText((questionIndex + 1) + ".");
+        questionTextLabel.setText(currentQuestion.getQuestionText());
+        option1.setText(currentQuestion.getOptionA());
+        option2.setText(currentQuestion.getOptionB());
+        option3.setText(currentQuestion.getOptionC());
+        option4.setText(currentQuestion.getOptionD());
     }
 
     private void checkAnswer() {
@@ -180,12 +154,16 @@ public class Quiz extends JFrame implements ActionListener {
 
     private void showScore() {
         setVisible(false);
-        // Assuming you have a Score class that takes name and score
         new Score(userName, score);
     }
 
-    public static void main(String[] args) {
-        // For testing purposes
-        new Quiz("User");
+    // --- ADDED PUBLIC GETTER METHODS ---
+    // These methods allow other classes like Help.java to safely access user name and score.
+    public String getUserName() {
+        return this.userName;
+    }
+
+    public int getScore() {
+        return this.score;
     }
 }
