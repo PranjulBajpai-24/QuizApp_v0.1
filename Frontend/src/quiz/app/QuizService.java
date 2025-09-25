@@ -1,16 +1,19 @@
 package quiz.app;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class QuizService {
 
     private final HttpClient client = HttpClient.newHttpClient();
+    private final Gson gson = new Gson();
 
     /**
      * Fetches the list of quiz questions from the backend server.
@@ -24,68 +27,40 @@ public class QuizService {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String jsonBody = response.body();
 
-            // For compilation without GSON, return dummy data
-            return getDummyQuestions();
+            // CORRECTED: Parse the real JSON from the server instead of returning dummy data.
+            return gson.fromJson(jsonBody, new TypeToken<List<Question>>(){}.getType());
 
         } catch (Exception e) {
             System.err.println("Error fetching questions from the server: " + e.getMessage());
-            return getDummyQuestions();
+            // Return an empty list if the backend is down.
+            return Collections.emptyList();
         }
     }
 
     /**
-     * Provides dummy questions when backend is not available or GSON is not working.
-     * This allows the application to run without the backend server.
+     * Sends the user's name, roll number, and score to the backend to be saved.
      */
-    private List<Question> getDummyQuestions() {
-        List<Question> dummyQuestions = new ArrayList<>();
+    public void saveScore(String userName, String rollNo, int score) {
+        try {
+            // Create a simple object to hold the data
+            QuizResult result = new QuizResult(userName, rollNo, score);
+            // Convert the object to a JSON string
+            String jsonPayload = gson.toJson(result);
 
-        dummyQuestions.add(new Question(
-            "What is Java?",
-            "A programming language",
-            "A type of coffee",
-            "An island",
-            "All of the above",
-            "A programming language"
-        ));
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/scores"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
 
-        dummyQuestions.add(new Question(
-            "Which keyword is used to define a constant in Java?",
-            "constant",
-            "final",
-            "static",
-            "volatile",
-            "final"
-        ));
+            // Send the request asynchronously (doesn't block the UI)
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> System.out.println("Score saved response: " + response.statusCode()));
 
-        dummyQuestions.add(new Question(
-            "What does JVM stand for?",
-            "Java Virtual Machine",
-            "Java Very Main",
-            "Java Virtual Method",
-            "Java Verified Module",
-            "Java Virtual Machine"
-        ));
-
-        dummyQuestions.add(new Question(
-            "Which of these is not a Java feature?",
-            "Object-oriented",
-            "Portable",
-            "Pointers",
-            "Dynamic",
-            "Pointers"
-        ));
-
-        dummyQuestions.add(new Question(
-            "What is the entry point of a Java application?",
-            "start() method",
-            "run() method",
-            "main() method",
-            "execute() method",
-            "main() method"
-        ));
-
-        return dummyQuestions;
+        } catch (Exception e) {
+            System.err.println("Error saving score: " + e.getMessage());
+        }
     }
 }

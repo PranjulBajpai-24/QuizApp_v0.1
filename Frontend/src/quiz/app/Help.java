@@ -20,14 +20,14 @@ public class Help extends JFrame {
 
         JTextArea helpText = new JTextArea();
         helpText.setText(
-            "→ Each question has 4 options, only one is correct.\n" +
-            "→ You can use the 'Help' button once per question to disable 2 options.\n" +
-            "→ Click 'Next' to go to the next question.\n" +
-            "→ Timer for each question is 15 seconds.\n\n" +
-            "For further issues, contact:\n" +
-            "Pranjul Bajpai\n" +
-            "Phone: +91 6389668790\n" +
-            "Email: pranjulbajpai63@gmail.com"
+                "→ Each question has 4 options, only one is correct.\n" +
+                        "→ You can use the 'Help' button to pause the timer.\n" +
+                        "→ Click 'Next' to go to the next question.\n" +
+                        "→ Timer for each question is 30 seconds.\n\n" +
+                        "For further issues, contact:\n" +
+                        "Pranjul Bajpai\n" +
+                        "Phone: +91 6389668790\n" +
+                        "Email: pranjulbajpai63@gmail.com"
         );
         helpText.setFont(new Font("Tahoma", Font.PLAIN, 16));
         helpText.setBounds(50, 70, 600, 200);
@@ -59,13 +59,13 @@ public class Help extends JFrame {
             if (quizRef != null) {
                 quizRef.setEnabled(true);
                 quizRef.setVisible(false);
-                new Score(quizRef.name, Quiz.score);
+                // CORRECTED: Pass the rollNo to the Score constructor
+                new Score(quizRef.getUserName(), quizRef.getRollNo(), quizRef.getScore());
             }
             dispose();
         });
         add(exit);
 
-        // Handle window close event safely
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -82,9 +82,5 @@ public class Help extends JFrame {
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);
-    }
-
-    public static void main(String[] args) {
-        new Help(null);
     }
 }
