@@ -97,7 +97,7 @@ public class Login extends JFrame implements ActionListener {
             if (name.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter your name and roll number to continue.", "Name and Roll Number Required", JOptionPane.WARNING_MESSAGE);
             } else if (rollNo.trim().isEmpty()) {
-                 JOptionPane.showMessageDialog(this, "Please enter your roll number to continue.", "Roll No. Required", JOptionPane.WARNING_MESSAGE);
+                 JOptionPane.showMessageDialog(this, "Please enter your roll ID to continue.", "Roll No. Required", JOptionPane.WARNING_MESSAGE);
             } else {
                 setVisible(false);
                 // Important: You must now pass both values to the Rules class

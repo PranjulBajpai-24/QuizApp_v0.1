@@ -3,12 +3,18 @@ package quiz.app;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.net.URL; // ADDED THIS IMPORT
+import java.net.URL;
+import java.util.List;
 
 public class Score extends JFrame {
 
-    Score(String name, String rollNo, int score) {
-        System.out.println("Attempting to save score for user: " + name);
+    private List<Question> questions;
+    private String[][] userAnswers;
+
+    Score(String name, String rollNo, int score, List<Question> questions, String[][] userAnswers) {
+        this.questions = questions;
+        this.userAnswers = userAnswers;
+
         QuizService service = new QuizService();
         service.saveScore(name, rollNo, score);
 
@@ -42,16 +48,37 @@ public class Score extends JFrame {
         scoreLabel.setHorizontalAlignment(JLabel.CENTER);
         add(scoreLabel);
 
-        JButton exit = new JButton("Play Again");
-        exit.setBounds((800 - 150) / 2, 420, 150, 40);
-        exit.setBackground(new Color(255, 140, 0));
-        exit.setForeground(Color.WHITE);
-        exit.setFont(new Font("Tahoma", Font.BOLD, 16));
-        exit.addActionListener(e -> {
+        JButton analysisButton = new JButton("View Result Analysis");
+        analysisButton.setBounds((800 - 250) / 2, 370, 250, 40);
+        analysisButton.setBackground(new Color(60, 179, 113));
+        analysisButton.setForeground(Color.WHITE);
+        analysisButton.setFont(new Font("Tahoma", Font.BOLD, 16));
+        analysisButton.addActionListener(e -> {
+            // UPDATED: Pass the name and roll number along with the results
+            new AnalysisViewer(name, rollNo, this.questions, this.userAnswers);
+        });
+        add(analysisButton);
+
+        JButton playAgainButton = new JButton("Play Again");
+        playAgainButton.setBounds((800 - 150) / 2, 430, 150, 40);
+        playAgainButton.setBackground(new Color(30, 144, 255));
+        playAgainButton.setForeground(Color.WHITE);
+        playAgainButton.setFont(new Font("Tahoma", Font.BOLD, 16));
+        playAgainButton.addActionListener(e -> {
             setVisible(false);
             new Login();
         });
-        add(exit);
+        add(playAgainButton);
+
+        JButton exitButton = new JButton("Exit");
+        exitButton.setBounds((800 - 150) / 2, 490, 150, 40);
+        exitButton.setBackground(new Color(255, 140, 0));
+        exitButton.setForeground(Color.WHITE);
+        exitButton.setFont(new Font("Tahoma", Font.BOLD, 16));
+        exitButton.addActionListener(e -> {
+            System.exit(0);
+        });
+        add(exitButton);
 
         setVisible(true);
     }

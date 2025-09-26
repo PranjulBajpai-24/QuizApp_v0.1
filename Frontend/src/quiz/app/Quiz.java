@@ -23,6 +23,7 @@ public class Quiz extends JFrame implements ActionListener {
     private int score = 0;
     private String userName;
     private String rollNo;
+    private QuizService quizService; // Instance variable for the service
 
     // --- Timer Variables ---
     private Timer timer;
@@ -32,7 +33,8 @@ public class Quiz extends JFrame implements ActionListener {
         this.userName = userName;
         this.rollNo = rollNo;
 
-        QuizService quizService = new QuizService();
+        // Create the service object once
+        this.quizService = new QuizService();
         this.questions = quizService.getQuizQuestions();
 
         if (questions == null || questions.isEmpty()) {
@@ -47,6 +49,7 @@ public class Quiz extends JFrame implements ActionListener {
     }
 
     private void setupUI() {
+        // Frame Setup
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(null);
@@ -56,6 +59,7 @@ public class Quiz extends JFrame implements ActionListener {
         int screenWidth = screenSize.width;
         int screenHeight = screenSize.height;
 
+        // Image
         URL iconUrl = getClass().getResource("/icons/quiz.png");
         if (iconUrl != null) {
             ImageIcon i1 = new ImageIcon(iconUrl);
@@ -66,6 +70,7 @@ public class Quiz extends JFrame implements ActionListener {
             add(image);
         }
 
+        // Labels
         questionCounterLabel = new JLabel();
         questionCounterLabel.setBounds(100, 350, 50, 30);
         questionCounterLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
@@ -82,12 +87,10 @@ public class Quiz extends JFrame implements ActionListener {
         timerLabel.setForeground(Color.RED);
         add(timerLabel);
 
+        // Radio Buttons
         int optionStartY = 420;
         int optionGap = 50;
-        option1 = new JRadioButton();
-        option2 = new JRadioButton();
-        option3 = new JRadioButton();
-        option4 = new JRadioButton();
+        option1 = new JRadioButton(); option2 = new JRadioButton(); option3 = new JRadioButton(); option4 = new JRadioButton();
         JRadioButton[] options = { option1, option2, option3, option4 };
         groupOptions = new ButtonGroup();
         for (int i = 0; i < 4; i++) {
@@ -98,10 +101,8 @@ public class Quiz extends JFrame implements ActionListener {
             groupOptions.add(options[i]);
         }
 
-        int buttonWidth = 200;
-        int buttonHeight = 40;
-        int bottomPadding = 100;
-
+        // Action Buttons
+        int buttonWidth = 200; int buttonHeight = 40; int bottomPadding = 100;
         helpButton = new JButton("Help");
         helpButton.setBounds(100, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
         helpButton.setBackground(new Color(30, 144, 255));
@@ -127,6 +128,7 @@ public class Quiz extends JFrame implements ActionListener {
         submitButton.addActionListener(this);
         add(submitButton);
 
+        // Progress Bar
         progressBar = new JProgressBar(0, questions.size());
         progressBar.setBounds(150, screenHeight - 70, screenWidth - 300, 25);
         progressBar.setStringPainted(true);
@@ -134,14 +136,15 @@ public class Quiz extends JFrame implements ActionListener {
         progressBar.setForeground(new Color(60, 179, 113));
         add(progressBar);
 
+        // Timer initialization
         timer = new Timer(1000, e -> updateTimer());
     }
 
+    // --- Action Handling ---
     @Override
     public void actionPerformed(ActionEvent e) {
         timer.stop();
         recordAnswer();
-
         if (e.getSource() == submitButton) {
             calculateAndShowScore();
         } else if (e.getSource() == helpButton) {
@@ -153,6 +156,7 @@ public class Quiz extends JFrame implements ActionListener {
         }
     }
 
+    // --- Timer Logic ---
     private void updateTimer() {
         secondsLeft--;
         timerLabel.setText("Time left: " + secondsLeft + " seconds");
@@ -172,21 +176,19 @@ public class Quiz extends JFrame implements ActionListener {
         }
     }
 
+    // --- Core Quiz Logic ---
     private void displayQuestion() {
         if (questionIndex >= questions.size()) {
             calculateAndShowScore();
             return;
         }
-
         if (questionIndex == questions.size() - 1) {
             nextButton.setEnabled(false);
             submitButton.setEnabled(true);
         }
-
         Question currentQuestion = questions.get(questionIndex);
         questionCounterLabel.setText((questionIndex + 1) + ". ");
         questionTextLabel.setText(currentQuestion.getQuestionText());
-
         option1.setText(currentQuestion.getOptionA());
         option1.setActionCommand(currentQuestion.getOptionA());
         option2.setText(currentQuestion.getOptionB());
@@ -195,23 +197,44 @@ public class Quiz extends JFrame implements ActionListener {
         option3.setActionCommand(currentQuestion.getOptionC());
         option4.setText(currentQuestion.getOptionD());
         option4.setActionCommand(currentQuestion.getOptionD());
-
         groupOptions.clearSelection();
         progressBar.setValue(questionIndex + 1);
         progressBar.setString("Question " + (questionIndex + 1) + " of " + questions.size());
-
         secondsLeft = 30;
         updateTimer();
         timer.start();
         helpButton.setEnabled(true);
     }
 
+    // In Quiz.java, replace your old recordAnswer method with this one.
     private void recordAnswer() {
+        String selectedAnswer = "";
         if (groupOptions.getSelection() != null) {
-            userAnswers[questionIndex][0] = groupOptions.getSelection().getActionCommand();
-        } else {
-            userAnswers[questionIndex][0] = "";
+            selectedAnswer = groupOptions.getSelection().getActionCommand();
         }
+        // Store the answer locally for the final score calculation
+        userAnswers[questionIndex][0] = selectedAnswer;
+
+        // --- THIS IS THE CORRECTED LOGIC ---
+        Question currentQuestion = questions.get(questionIndex);
+
+        // 1. Get the correct answer text from the current question
+        String correctAnswer = currentQuestion.getCorrectAnswer();
+
+        // 2. Perform a safe, whitespace-insensitive comparison
+        boolean isAnswerCorrect = selectedAnswer.trim().equals(correctAnswer.trim());
+
+        // 3. Create the response object with the correct boolean value
+        UserResponse response = new UserResponse(
+                this.userName,
+                this.rollNo,
+                currentQuestion.getId(),
+                selectedAnswer,
+                isAnswerCorrect // Use the result of our comparison
+        );
+
+        // 4. Send the response to the backend
+        quizService.submitAnswer(response);
     }
 
     private void calculateAndShowScore() {
@@ -222,24 +245,20 @@ public class Quiz extends JFrame implements ActionListener {
             }
         }
         setVisible(false);
-        // CORRECTED: Pass the rollNo to the Score constructor
-        new Score(userName, rollNo, score);
+        new Score(userName, rollNo, score, questions, userAnswers);
     }
 
-    public void resumeTimer() {
-        timer.start();
-    }
+    // --- Public Methods for Other Classes to Use ---
+    public void resumeTimer() { timer.start(); }
+    public String getUserName() { return this.userName; }
+    public int getScore() { return this.score; }
+    public String getRollNo() { return this.rollNo; }
 
-    public String getUserName() {
-        return this.userName;
+    // ADDED: These methods are required by Help.java to pass data to the Score screen
+    public List<Question> getQuestions() {
+        return this.questions;
     }
-
-    public int getScore() {
-        return this.score;
-    }
-
-    // ADDED: This method is needed for the Help class
-    public String getRollNo() {
-        return this.rollNo;
+    public String[][] getUserAnswers() {
+        return this.userAnswers;
     }
 }

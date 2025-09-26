@@ -59,8 +59,14 @@ public class Help extends JFrame {
             if (quizRef != null) {
                 quizRef.setEnabled(true);
                 quizRef.setVisible(false);
-                // CORRECTED: Pass the rollNo to the Score constructor
-                new Score(quizRef.getUserName(), quizRef.getRollNo(), quizRef.getScore());
+                // CORRECTED: Pass all 5 required arguments to the Score constructor
+                new Score(
+                        quizRef.getUserName(),
+                        quizRef.getRollNo(),
+                        quizRef.getScore(),
+                        quizRef.getQuestions(),
+                        quizRef.getUserAnswers()
+                );
             }
             dispose();
         });
