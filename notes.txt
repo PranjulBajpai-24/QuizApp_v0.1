@@ -8,3 +8,15 @@ java quiz.app.Login
 Backend
 
 C:\Users\pranjul bajpai\OneDrive\Desktop\QUIZ Application\Backend\quiz-backend\src\main\java\com\example\quiz_backend\QuizBackendApplication.java
+
+
+Compile the application: ./build_and_run.sh compile
+
+
+Run the application: ./build_and_run.sh run
+
+
+Compile and run in one command: ./build_and_run.sh build-run
+
+Clean compiled class files: ./build_and_run.sh clean
+
