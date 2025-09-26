@@ -10,13 +10,13 @@ Backend
 C:\Users\pranjul bajpai\OneDrive\Desktop\QUIZ Application\Backend\quiz-backend\src\main\java\com\example\quiz_backend\QuizBackendApplication.java
 
 
-Compile the application: ./build_and_run.sh compile
+Compile the application: ./build_and_run.bat compile
 
 
-Run the application: ./build_and_run.sh run
+Run the application: ./build_and_run.bat run
 
 
-Compile and run in one command: ./build_and_run.sh build-run
+Compile and run in one command: ./build_and_run.bat build-run
 
-Clean compiled class files: ./build_and_run.sh clean
+Clean compiled class files: ./build_and_run.bat clean
 
