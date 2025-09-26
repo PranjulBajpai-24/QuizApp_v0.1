@@ -36,7 +36,7 @@ public class Score extends JFrame {
         add(heading);
 
         JLabel scoreLabel = new JLabel("Your Score: " + score);
-        scoreLabel.setBounds(100, 310, 600, 40);git checkout main
+        scoreLabel.setBounds(100, 310, 600, 40);
         scoreLabel.setFont(new Font("Tahoma", Font.BOLD, 26));
         scoreLabel.setForeground(new Color(34, 139, 34));
         scoreLabel.setHorizontalAlignment(JLabel.CENTER);
