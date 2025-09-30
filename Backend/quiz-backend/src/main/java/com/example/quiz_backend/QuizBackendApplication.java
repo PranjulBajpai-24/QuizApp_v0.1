@@ -17,9 +17,13 @@ public class QuizBackendApplication {
 	@Bean
 	CommandLineRunner commandLineRunner(QuestionRepository repository) {
 		return args -> {
+			// --- THIS IS THE FIX ---
+			// First, delete all existing questions to prevent duplicates on restart.
+			repository.deleteAll();
+			// ---------------------
+
 			List<Question> allQuestions = new ArrayList<>();
 
-			// UPDATED: All questions now have 4 options (6 arguments total)
 			allQuestions.add(new Question("Which of these is not a Java keyword?", "static", "Boolean", "void", "private", "Boolean"));
 			allQuestions.add(new Question("Which of these cannot be used for a variable name in Java?", "identifier", "keyword", "variable", "_temp", "keyword"));
 			allQuestions.add(new Question("Which method must be implemented by all threads?", "start()", "stop()", "run()", "main()", "run()"));
@@ -37,7 +41,7 @@ public class QuizBackendApplication {
 			allQuestions.add(new Question("Which pattern restricts a class to one object?", "Factory Pattern", "Builder Pattern", "Singleton Pattern", "Observer Pattern", "Singleton Pattern"));
 
 			repository.saveAll(allQuestions);
-			System.out.println("-----> All 15 sample questions (with 4 options) have been saved! <-----");
+			System.out.println("-----> Database cleared and 15 sample questions have been saved! <-----");
 		};
 	}
 }
