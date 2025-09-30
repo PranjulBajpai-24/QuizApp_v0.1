@@ -8,8 +8,8 @@ WORKDIR /app
 # Copy the project files into the working directory
 COPY . .
 
-# Run the Maven build command to create the JAR file
-RUN mvn clean install
+# Run the Maven build command to create the JAR file, skipping tests
+RUN mvn clean install -DskipTests
 
 # --- Run Stage ---
 # Use a lightweight Java 17 image to run the application
