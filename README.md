@@ -62,7 +62,7 @@ Result Analysis View
 📥 How to Run the Application
 The runnable desktop application can be downloaded directly from the Releases section of this GitHub repository.
 
-1. Go to the Releases page.
+1. Go to the https://github.com/PranjulBajpai-24/QuizApp_v0.1/releases/tag/v1.0 
 
 2. Download the Quiz-Game.zip file from the latest release.
 
