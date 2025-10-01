@@ -59,6 +59,20 @@ Result Analysis View
 
 
 
+📥 How to Run the Application
+The runnable desktop application can be downloaded directly from the Releases section of this GitHub repository.
+
+1. Go to the Releases page.
+
+2. Download the Quiz-Game.zip file from the latest release.
+
+3. Unzip the file.
+
+4. Ensure you have Java installed on your computer.
+
+5. Double-click the Frontend.jar file to run the application.
+
+
 
 
 
