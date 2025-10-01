@@ -13,11 +13,12 @@ public class QuizService {
 
     private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
+    private final String BASE_URL = "https://quiz-website-backend-pzru.onrender.com"; // Your live URL
 
     public List<Question> getQuizQuestions() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/questions"))
+                    .uri(URI.create(BASE_URL + "/api/questions"))
                     .header("Accept", "application/json")
                     .build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -33,7 +34,7 @@ public class QuizService {
             QuizResult result = new QuizResult(userName, rollNo, score);
             String jsonPayload = gson.toJson(result);
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/scores"))
+                    .uri(URI.create(BASE_URL + "/api/scores"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();
@@ -48,7 +49,7 @@ public class QuizService {
         try {
             String jsonPayload = gson.toJson(response);
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/responses"))
+                    .uri(URI.create(BASE_URL + "/api/responses"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
                     .build();

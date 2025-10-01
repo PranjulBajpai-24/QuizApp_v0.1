@@ -23,7 +23,7 @@ public class Quiz extends JFrame implements ActionListener {
     private int score = 0;
     private String userName;
     private String rollNo;
-    private QuizService quizService; // Instance variable for the service
+    private QuizService quizService;
 
     // --- Timer Variables ---
     private Timer timer;
@@ -32,34 +32,87 @@ public class Quiz extends JFrame implements ActionListener {
     public Quiz(String userName, String rollNo) {
         this.userName = userName;
         this.rollNo = rollNo;
-
-        // Create the service object once
         this.quizService = new QuizService();
-        this.questions = quizService.getQuizQuestions();
 
-        if (questions == null || questions.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Could not load questions. Make sure the backend server is running.", "Load Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
-        }
-
-        this.userAnswers = new String[questions.size()][1];
+        // --- Step 1: Set up the UI immediately ---
         setupUI();
-        displayQuestion();
         setVisible(true);
+
+        // --- Step 2: Show a "Loading" state to the user ---
+        showLoadingState();
+
+        // --- Step 3: Start fetching questions in the background ---
+        new QuestionFetcher().execute();
     }
 
+    /**
+     * A SwingWorker to fetch questions on a background thread without freezing the UI.
+     */
+    private class QuestionFetcher extends SwingWorker<List<Question>, Void> {
+        @Override
+        protected List<Question> doInBackground() throws Exception {
+            // This runs on a separate thread
+            return quizService.getQuizQuestions();
+        }
+
+        @Override
+        protected void done() {
+            // This runs back on the UI thread after doInBackground is finished
+            try {
+                questions = get(); // Get the list of questions from the background task
+                if (questions == null || questions.isEmpty()) {
+                    showErrorAndExit();
+                } else {
+                    // Questions loaded successfully, initialize the quiz
+                    initializeQuiz();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                showErrorAndExit();
+            }
+        }
+    }
+
+    private void showLoadingState() {
+        questionTextLabel.setText("Loading questions from the server, please wait...");
+        option1.setVisible(false);
+        option2.setVisible(false);
+        option3.setVisible(false);
+        option4.setVisible(false);
+        nextButton.setEnabled(false);
+        helpButton.setEnabled(false);
+        progressBar.setIndeterminate(true); // Show a loading animation on the progress bar
+        progressBar.setString("Connecting to server...");
+    }
+
+    private void showErrorAndExit() {
+        JOptionPane.showMessageDialog(this, "Could not load questions. The server might be busy or down.", "Load Error", JOptionPane.ERROR_MESSAGE);
+        System.exit(0);
+    }
+
+    private void initializeQuiz() {
+        this.userAnswers = new String[questions.size()][1];
+        progressBar.setIndeterminate(false);
+        progressBar.setMaximum(questions.size());
+        option1.setVisible(true);
+        option2.setVisible(true);
+        option3.setVisible(true);
+        option4.setVisible(true);
+        nextButton.setEnabled(true);
+        helpButton.setEnabled(true);
+        displayQuestion();
+    }
+
+    // --- The rest of your code remains largely the same ---
+
     private void setupUI() {
-        // Frame Setup
         setUndecorated(true);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLayout(null);
         getContentPane().setBackground(new Color(255, 245, 230));
-
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int screenWidth = screenSize.width;
         int screenHeight = screenSize.height;
-
-        // Image
         URL iconUrl = getClass().getResource("/icons/quiz.png");
         if (iconUrl != null) {
             ImageIcon i1 = new ImageIcon(iconUrl);
@@ -69,27 +122,20 @@ public class Quiz extends JFrame implements ActionListener {
             image.setBounds(0, 0, screenWidth, 300);
             add(image);
         }
-
-        // Labels
         questionCounterLabel = new JLabel();
         questionCounterLabel.setBounds(100, 350, 50, 30);
         questionCounterLabel.setFont(new Font("Tahoma", Font.BOLD, 24));
         add(questionCounterLabel);
-
         questionTextLabel = new JLabel();
         questionTextLabel.setBounds(150, 350, screenWidth - 200, 30);
         questionTextLabel.setFont(new Font("Tahoma", Font.PLAIN, 24));
         add(questionTextLabel);
-
         timerLabel = new JLabel();
         timerLabel.setBounds(screenWidth - 300, 310, 250, 30);
         timerLabel.setFont(new Font("Tahoma", Font.BOLD, 18));
         timerLabel.setForeground(Color.RED);
         add(timerLabel);
-
-        // Radio Buttons
-        int optionStartY = 420;
-        int optionGap = 50;
+        int optionStartY = 420; int optionGap = 50;
         option1 = new JRadioButton(); option2 = new JRadioButton(); option3 = new JRadioButton(); option4 = new JRadioButton();
         JRadioButton[] options = { option1, option2, option3, option4 };
         groupOptions = new ButtonGroup();
@@ -100,8 +146,6 @@ public class Quiz extends JFrame implements ActionListener {
             add(options[i]);
             groupOptions.add(options[i]);
         }
-
-        // Action Buttons
         int buttonWidth = 200; int buttonHeight = 40; int bottomPadding = 100;
         helpButton = new JButton("Help");
         helpButton.setBounds(100, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
@@ -110,7 +154,6 @@ public class Quiz extends JFrame implements ActionListener {
         helpButton.setFont(new Font("Tahoma", Font.BOLD, 16));
         helpButton.addActionListener(this);
         add(helpButton);
-
         nextButton = new JButton("Next");
         nextButton.setBounds(screenWidth - buttonWidth - 100, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
         nextButton.setBackground(new Color(30, 144, 255));
@@ -118,7 +161,6 @@ public class Quiz extends JFrame implements ActionListener {
         nextButton.setFont(new Font("Tahoma", Font.BOLD, 16));
         nextButton.addActionListener(this);
         add(nextButton);
-
         submitButton = new JButton("Submit");
         submitButton.setBounds((screenWidth - buttonWidth) / 2, screenHeight - bottomPadding - 50, buttonWidth, buttonHeight);
         submitButton.setBackground(new Color(34, 139, 34));
@@ -127,20 +169,15 @@ public class Quiz extends JFrame implements ActionListener {
         submitButton.setEnabled(false);
         submitButton.addActionListener(this);
         add(submitButton);
-
-        // Progress Bar
-        progressBar = new JProgressBar(0, questions.size());
+        progressBar = new JProgressBar();
         progressBar.setBounds(150, screenHeight - 70, screenWidth - 300, 25);
         progressBar.setStringPainted(true);
         progressBar.setFont(new Font("Tahoma", Font.BOLD, 16));
         progressBar.setForeground(new Color(60, 179, 113));
         add(progressBar);
-
-        // Timer initialization
         timer = new Timer(1000, e -> updateTimer());
     }
 
-    // --- Action Handling ---
     @Override
     public void actionPerformed(ActionEvent e) {
         timer.stop();
@@ -156,7 +193,6 @@ public class Quiz extends JFrame implements ActionListener {
         }
     }
 
-    // --- Timer Logic ---
     private void updateTimer() {
         secondsLeft--;
         timerLabel.setText("Time left: " + secondsLeft + " seconds");
@@ -176,7 +212,6 @@ public class Quiz extends JFrame implements ActionListener {
         }
     }
 
-    // --- Core Quiz Logic ---
     private void displayQuestion() {
         if (questionIndex >= questions.size()) {
             calculateAndShowScore();
@@ -206,34 +241,16 @@ public class Quiz extends JFrame implements ActionListener {
         helpButton.setEnabled(true);
     }
 
-    // In Quiz.java, replace your old recordAnswer method with this one.
     private void recordAnswer() {
+        if(questionIndex >= questions.size()) return; // Safety check
         String selectedAnswer = "";
         if (groupOptions.getSelection() != null) {
             selectedAnswer = groupOptions.getSelection().getActionCommand();
         }
-        // Store the answer locally for the final score calculation
         userAnswers[questionIndex][0] = selectedAnswer;
-
-        // --- THIS IS THE CORRECTED LOGIC ---
         Question currentQuestion = questions.get(questionIndex);
-
-        // 1. Get the correct answer text from the current question
-        String correctAnswer = currentQuestion.getCorrectAnswer();
-
-        // 2. Perform a safe, whitespace-insensitive comparison
-        boolean isAnswerCorrect = selectedAnswer.trim().equals(correctAnswer.trim());
-
-        // 3. Create the response object with the correct boolean value
-        UserResponse response = new UserResponse(
-                this.userName,
-                this.rollNo,
-                currentQuestion.getId(),
-                selectedAnswer,
-                isAnswerCorrect // Use the result of our comparison
-        );
-
-        // 4. Send the response to the backend
+        boolean isCorrect = selectedAnswer.trim().equals(currentQuestion.getCorrectAnswer().trim());
+        UserResponse response = new UserResponse(this.userName, this.rollNo, currentQuestion.getId(), selectedAnswer, isCorrect);
         quizService.submitAnswer(response);
     }
 
@@ -248,17 +265,10 @@ public class Quiz extends JFrame implements ActionListener {
         new Score(userName, rollNo, score, questions, userAnswers);
     }
 
-    // --- Public Methods for Other Classes to Use ---
     public void resumeTimer() { timer.start(); }
     public String getUserName() { return this.userName; }
     public int getScore() { return this.score; }
     public String getRollNo() { return this.rollNo; }
-
-    // ADDED: These methods are required by Help.java to pass data to the Score screen
-    public List<Question> getQuestions() {
-        return this.questions;
-    }
-    public String[][] getUserAnswers() {
-        return this.userAnswers;
-    }
+    public List<Question> getQuestions() { return this.questions; }
+    public String[][] getUserAnswers() { return this.userAnswers; }
 }

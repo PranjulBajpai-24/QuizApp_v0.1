@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Frontend:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Frontend_jar</output-path>
+    <root id="archive" name="Frontend.jar">
+      <element id="module-output" name="Frontend" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.13.2.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
